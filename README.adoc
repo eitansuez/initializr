@@ -252,7 +252,8 @@ If you are on a Mac and using http://brew.sh/[homebrew], install the Cloud Found
 
 [indent=0]
 ----
-    $ brew install cloudfoundry-cli
+    $ brew tap cloudfoundry/tap
+    $ brew install cf-cli
 ----
 
 Alternatively, download a suitable binary for your platform from 
