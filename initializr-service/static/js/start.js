@@ -3,59 +3,59 @@
   Versions = function () {
   };
 
-  var strict_range = /\[(.*),(.*)\]/;
-  var halfopen_right_range = /\[(.*),(.*)\)/;
-  var halfopen_left_range = /\((.*),(.*)\]/;
-  var qualifiers = ['M', 'RC', 'BUILD-SNAPSHOT', 'RELEASE'];
+  var strict_range = /\[(.*),(.*)\]/,
+    halfopen_right_range = /\[(.*),(.*)\)/,
+    halfopen_left_range = /\((.*),(.*)\]/,
+    qualifiers = ['M', 'RC', 'BUILD-SNAPSHOT', 'RELEASE'];
 
   Versions.prototype.matchRange = function (range) {
-    var strict_match = range.match(strict_range);
+    var strict_match = range.match(strict_range),
+      hor_match = range.match(halfopen_right_range),
+      hol_match = range.match(halfopen_left_range);
     if (strict_match) {
       return function (version) {
         return compareVersions(strict_match[1], version) <= 0
             && compareVersions(strict_match[2], version) >= 0;
-      }
+      };
     }
-    var hor_match = range.match(halfopen_right_range);
     if (hor_match) {
       return function (version) {
         return compareVersions(hor_match[1], version) <= 0
             && compareVersions(hor_match[2], version) > 0;
-      }
+      };
     }
-    var hol_match = range.match(halfopen_left_range);
     if (hol_match) {
       return function (version) {
         return compareVersions(hol_match[1], version) < 0
             && compareVersions(hol_match[2], version) >= 0;
-      }
+      };
     }
 
     return function (version) {
       return compareVersions(range, version) <= 0;
-    }
+    };
   };
 
   function parseQualifier(version) {
     var qual = version.replace(/\d+/g, "");
-    return qualifiers.indexOf(qual) != -1 ? qual : "RELEASE";
+    return qualifiers.indexOf(qual) !== -1 ? qual : "RELEASE";
   }
 
   function compareVersions(a, b) {
-    var result;
+    var result, i,
+      versionA = a.split("."),
+      versionB = b.split("."),
+      aqual = parseQualifier(versionA[3]),
+      bqual = parseQualifier(versionB[3]);
 
-    var versionA = a.split(".");
-    var versionB = b.split(".");
-    for (var i = 0; i < 3; i++) {
+    for (i = 0; i < 3; i++) {
       result = parseInt(versionA[i], 10) - parseInt(versionB[i], 10);
-      if (result != 0) {
+      if (result !== 0) {
         return result;
       }
     }
-    var aqual = parseQualifier(versionA[3]);
-    var bqual = parseQualifier(versionB[3]);
     result = qualifiers.indexOf(aqual) - qualifiers.indexOf(bqual);
-    if (result != 0) {
+    if (result !== 0) {
       return result;
     }
     return versionA[3].localeCompare(versionB[3]);
@@ -73,13 +73,14 @@
   hashbang = function (url, i, hash) {
     url = url || window.location.href;
 
-    var pos = url.indexOf('#!');
-    if (pos < 0) return [];
-    var vars = [], hashes = url.slice(pos + 2).split('&');
+    var pos = url.indexOf('#!'),
+      vars = [],
+      hashes = url.slice(pos + 2).split('&');
+
+    if (pos < 0) { return []; }
 
     for (i = hashes.length; i--;) {
       hash = hashes[i].split('=');
-
       vars.push({name: hash[0], value: hash.length > 1 ? hash[1] : null});
     }
 
@@ -175,8 +176,9 @@ function toggleDepsTab(typeValue) {
 }
 
 function setupButtonsForTooltips() {
+  var i;
   var btns = document.querySelectorAll('.deps-block button');
-  for (var i = 0; i < btns.length; i++) {
+  for (i = 0; i < btns.length; i++) {
     btns[i].addEventListener('mouseleave', function (e) {
       e.currentTarget.setAttribute('class', 'cpbtn');
       e.currentTarget.removeAttribute('aria-label');
@@ -203,7 +205,7 @@ $(function () {
   fetchAllDependencies();
   initClipboard();
 
-  if (navigator.appVersion.indexOf("Mac") != -1) {
+  if (navigator.appVersion.indexOf("Mac") !== -1) {
     $(".btn-primary").append("<kbd>&#8984; + &#9166;</kbd>");
   }
   else {
@@ -222,7 +224,7 @@ $(function () {
     });
   };
   var addTag = function (id, name) {
-    if ($("#starters div[data-id='" + id + "']").length == 0) {
+    if ($("#starters div[data-id='" + id + "']").length === 0) {
       $("#starters").append("<div class='tag' data-id='" + id + "'>" + name +
           "<button type='button' class='close' aria-label='Close'><span aria-hidden='true'>&times;</span></button></div>");
     }
