@@ -84,7 +84,7 @@
         }
 
         return vars;
-    }
+    };
 
     applyParams = function() {
         var params = hashbang();
@@ -229,7 +229,7 @@ $(function () {
         $("#name").val($(this).val());
     });
     $("#dependencies input").bind("change", function () {
-        var value = $(this).val()
+        var value = $(this).val();
         if ($(this).prop('checked')) {
             var results = starters.get(value);
             addTag(results[0].id, results[0].name);
