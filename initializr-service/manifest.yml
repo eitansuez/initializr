@@ -1,7 +1,7 @@
 ---
 applications:
-- name: start
+- name: eitan-start
+  path: build/start.jar
   memory: 1024M
-  host: start-development
-  domain: cfapps.io
-  path: .
+  buildpack: java_buildpack
+

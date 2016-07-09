@@ -1,0 +1,47 @@
+2016.07.08..
+
+initializr:
+
+TODO:
+1. sync with parent project (one i forked from)
+
+-----phase 2:
+write your own separate pure spa javascript implementation of the gui
+  need to familiarize myself with the tooling..grunt?  yeoman?  bower?  gulp?
+
+---DONE:
+x read the project wiki
+  x configuration format
+  x guidelines for 3rd party starters
+  x metadata format
+x review controller endpoint implementations
+x review home.html
+x grok start.js
+x figure out how to rapidly develop / fast feedback cycles - make a change, refresh page, etc..
+
+x when page initializes, fetch dependencies into local (client-side) model
+x have a template for rendering dependencies maven style and gradle style
+x setup the two divs
+x bind div display to project type
+x each time you add/remove tag, you update a project dependencies model
+x bind dependencies model to div with template
+x add highlightjs to make it look pretty
+x add copy2clipboard to grab it into the pastebuffer
+x implement the design/feature
+x understand how to build it, run it locally, set it up in the ide
+x add a div to display the gradle dependencies
+x add a div to display the maven dependencies
+x bind display/visibility property of each div to the project type control (select)
+x perhaps display div only if # dependencies > 0
+x hook in to addTag/removeTag to update the contents of those divs each time a dependency is added or removed
+x dependencies = list of dependency objects
+x each dependency object can render itself to maven or to gradle
+x view is a rendering of the dependencies list
+x add a code highlighter to nicely render the contents (one is xml and the other is groovy).  see highlightjs.org
+x add a copy to clipboard button to copy the dependencies snippet.  see clipboardjs.com
+
+x one problem is that all you have on the client is the tuple representing a dependency: id, name, description
+x this is not the actual dependency information that you need to render
+x i suspect that's on the server side and gets generated there for download
+x  there is a /dependencies endpoint that will fetch them
+x need to run lint on start.js - semicolons missing in places
