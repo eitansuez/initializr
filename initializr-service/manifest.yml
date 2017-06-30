@@ -1,7 +1,0 @@
----
-applications:
-- name: eitan-start
-  path: build/start.jar
-  memory: 1024M
-  buildpack: java_buildpack
-
