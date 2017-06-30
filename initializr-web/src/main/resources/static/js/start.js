@@ -125,11 +125,14 @@ $(function () {
     var refreshDependencies = function (versionRange) {
         var versions = new Versions();
         $("#dependencies div.checkbox").each(function (idx, item) {
-            if ($(item).attr('data-range') === 'null' || versions.matchRange($(item).attr('data-range'))(versionRange)) {
-                $(item).show();
+            if (!$(item).attr('data-range') || versions.matchRange($(item).attr('data-range'))(versionRange)) {
+                $("input", item).removeAttr("disabled");
+                $(item).removeClass("disabled has-error");
             } else {
-                $(item).hide();
                 $("input", item).prop('checked', false);
+                $(item).addClass("disabled has-error");
+                $("input", item).attr("disabled", true);
+                removeTag($("input", item).val());
             }
         });
     };
@@ -153,12 +156,24 @@ $(function () {
             engine.add(data.dependencies);
         });
     };
+    var generatePackageName = function() {
+        var groupId = $("#groupId").val();
+        var artifactId = $("#artifactId").val();
+        var package = groupId.concat(".").concat(artifactId)
+            .replace(/-/g, '');
+        $("#packageName").val(package);
+    };
     refreshDependencies($("#bootVersion").val());
     $("#type").on('change', function () {
         $("#form").attr('action', $(this.options[this.selectedIndex]).attr('data-action'))
     });
+    $("#groupId").on("change", function() {
+        generatePackageName();
+    });
     $("#artifactId").on('change', function () {
+        $("#name").val($(this).val());
         $("#baseDir").attr('value', this.value)
+        generatePackageName();
     });
     $("#bootVersion").on("change", function (e) {
         refreshDependencies(this.value);
@@ -179,6 +194,7 @@ $(function () {
         $("body").scrollTop(0);
         return false;
     });
+    var maxSuggestions = 5;
     var starters = new Bloodhound({
         datumTokenizer: Bloodhound.tokenizers.obj.nonword('name', 'description', 'keywords', 'group'),
         queryTokenizer: Bloodhound.tokenizers.nonword,
@@ -188,6 +204,7 @@ $(function () {
         sorter: function(a,b) {
             return b.weight - a.weight;
         },
+        limit: maxSuggestions,
         cache: false
     });
     initializeSearchEngine(starters, $("#bootVersion").val());
@@ -202,6 +219,14 @@ $(function () {
             templates: {
                 suggestion: function (data) {
                     return "<div><strong>" + data.name + "</strong><br/><small>" + data.description + "</small></div>";
+                },
+                footer: function(search) {
+                    if (search.suggestions && search.suggestions.length == maxSuggestions) {
+                        return "<div class=\"tt-footer\">More matches, please refine your search</div>";
+                    }
+                    else {
+                        return "";
+                    }
                 }
             }
         });
@@ -221,12 +246,6 @@ $(function () {
         var id = $(this).parent().attr("data-id");
         $("#dependencies input[value='" + id + "']").prop('checked', false);
         removeTag(id);
-    });
-    $("#groupId").on("change", function() {
-        $("#packageName").val($(this).val());
-    });
-    $("#artifactId").on("change", function() {
-        $("#name").val($(this).val());
     });
     $("#dependencies input").bind("change", function () {
         var value = $(this).val();
@@ -253,7 +272,6 @@ $(function () {
             e.returnValue = false;
         }
     });
-
     applyParams();
     if ("onhashchange" in window) {
         window.onhashchange = function() {
@@ -263,5 +281,4 @@ $(function () {
             applyParams();
         }
     }
-
 });

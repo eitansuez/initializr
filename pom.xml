@@ -1,10 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>io.spring.initializr</groupId>
 	<artifactId>initializr</artifactId>
-	<version>1.0.0.BUILD-SNAPSHOT</version>
+	<version>0.4.0.BUILD-SNAPSHOT</version>
 	<packaging>pom</packaging>
 	<name>Spring Initializr</name>
 	<description>A web-based quickstart generator for Spring projects</description>
@@ -38,13 +37,13 @@
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<selenium.version>2.43.1</selenium.version>
-		<spring.boot.version>1.3.6.RELEASE</spring.boot.version>
-		<java.version>1.7</java.version>
+		<spring.boot.version>1.4.7.RELEASE</spring.boot.version>
+		<java.version>1.8</java.version>
 	</properties>
 
 	<modules>
 		<module>initializr-actuator</module>
+		<module>initializr-docs</module>
 		<module>initializr-generator</module>
 		<module>initializr-web</module>
 	</modules>
@@ -54,31 +53,38 @@
 			<dependency>
 				<groupId>io.spring.initializr</groupId>
 				<artifactId>initializr-actuator</artifactId>
-				<version>1.0.0.BUILD-SNAPSHOT</version>
+				<version>0.4.0.BUILD-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>io.spring.initializr</groupId>
 				<artifactId>initializr-generator</artifactId>
-				<version>1.0.0.BUILD-SNAPSHOT</version>
+				<version>0.4.0.BUILD-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>io.spring.initializr</groupId>
 				<artifactId>initializr-generator</artifactId>
-				<version>1.0.0.BUILD-SNAPSHOT</version>
+				<version>0.4.0.BUILD-SNAPSHOT</version>
 				<type>test-jar</type>
 			</dependency>
 			<dependency>
 				<groupId>io.spring.initializr</groupId>
 				<artifactId>initializr-web</artifactId>
-				<version>1.0.0.BUILD-SNAPSHOT</version>
+				<version>0.4.0.BUILD-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>io.spring.initializr</groupId>
 				<artifactId>initializr-web</artifactId>
-				<version>1.0.0.BUILD-SNAPSHOT</version>
+				<version>0.4.0.BUILD-SNAPSHOT</version>
 				<type>test-jar</type>
 			</dependency>
 
+			<dependency>
+				<groupId>org.springframework.cloud</groupId>
+				<artifactId>spring-cloud-contract-dependencies</artifactId>
+				<version>1.0.5.RELEASE</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
 			<dependency>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-dependencies</artifactId>
@@ -87,40 +93,20 @@
 				<scope>import</scope>
 			</dependency>
 			<dependency>
-				<groupId>com.google.guava</groupId>
-				<artifactId>guava</artifactId>
-				<version>16.0</version>
-			</dependency>
-			<dependency>
 				<groupId>xmlunit</groupId>
 				<artifactId>xmlunit</artifactId>
 				<version>1.5</version>
 			</dependency>
 			<dependency>
-				<groupId>org.skyscreamer</groupId>
-				<artifactId>jsonassert</artifactId>
-				<version>1.2.3</version>
-			</dependency>
-			<dependency>
-				<groupId>org.gebish</groupId>
-				<artifactId>geb-core</artifactId>
-				<version>0.10.0</version>
+				<groupId>org.apache.ant</groupId>
+				<artifactId>ant</artifactId>
+				<version>1.10.1</version>
 				<exclusions>
 					<exclusion>
-						<groupId>org.codehaus.groovy</groupId>
-						<artifactId>groovy-all</artifactId>
+						<groupId>org.apache.ant</groupId>
+						<artifactId>ant-launcher</artifactId>
 					</exclusion>
 				</exclusions>
-			</dependency>
-			<dependency>
-				<groupId>org.seleniumhq.selenium</groupId>
-				<artifactId>selenium-support</artifactId>
-				<version>${selenium.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.seleniumhq.selenium</groupId>
-				<artifactId>selenium-firefox-driver</artifactId>
-				<version>${selenium.version}</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
@@ -143,6 +129,26 @@
 		<pluginManagement>
 			<plugins>
 				<plugin>
+					<groupId>com.agilejava.docbkx</groupId>
+					<artifactId>docbkx-maven-plugin</artifactId>
+					<version>2.0.15</version>
+				</plugin>
+				<plugin>
+					<groupId>org.asciidoctor</groupId>
+					<artifactId>asciidoctor-maven-plugin</artifactId>
+					<version>1.5.0</version>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-antrun-plugin</artifactId>
+					<version>1.8</version>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-assembly-plugin</artifactId>
+					<version>2.6</version>
+				</plugin>
+				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-compiler-plugin</artifactId>
 					<version>3.1</version>
@@ -157,19 +163,9 @@
 					<version>2.6</version>
 				</plugin>
 				<plugin>
-					<groupId>org.codehaus.gmavenplus</groupId>
-					<artifactId>gmavenplus-plugin</artifactId>
-					<version>1.5</version>
-					<executions>
-						<execution>
-							<goals>
-								<goal>addSources</goal>
-								<goal>addTestSources</goal>
-								<goal>compile</goal>
-								<goal>testCompile</goal>
-							</goals>
-						</execution>
-					</executions>
+					<groupId>org.codehaus.mojo</groupId>
+					<artifactId>build-helper-maven-plugin</artifactId>
+					<version>1.10</version>
 				</plugin>
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
@@ -190,8 +186,27 @@
 						</excludes>
 					</configuration>
 				</plugin>
+				<plugin>
+					<groupId>org.springframework.boot</groupId>
+					<artifactId>spring-boot-maven-plugin</artifactId>
+					<version>${spring.boot.version}</version>
+				</plugin>
+				<plugin>
+					<groupId>pl.project13.maven</groupId>
+					<artifactId>git-commit-id-plugin</artifactId>
+					<version>2.1.11</version>
+				</plugin>
 			</plugins>
 		</pluginManagement>
 	</build>
+
+	<profiles>
+		<profile>
+			<id>full</id>
+			<modules>
+				<module>initializr-service</module>
+			</modules>
+		</profile>
+	</profiles>
 
 </project>

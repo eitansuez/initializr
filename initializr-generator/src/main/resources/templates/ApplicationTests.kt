@@ -1,13 +1,17 @@
-package ${packageName}
+package {{packageName}}
 
 import org.junit.Test
 import org.junit.runner.RunWith
-${testImports}<% if (newTestInfrastructure) { %>
+{{testImports}}
+{{#newTestInfrastructure}}
 @RunWith(SpringRunner::class)
-@SpringBootTest<% } else { %>
+@SpringBootTest
+{{/newTestInfrastructure}}
+{{^newTestInfrastructure}}
 @RunWith(SpringJUnit4ClassRunner::class)
-@SpringApplicationConfiguration(classes = arrayOf(${applicationName}::class))<% } %>
-${testAnnotations}class ${applicationName}Tests {
+@SpringApplicationConfiguration(classes = arrayOf({{applicationName}}::class))
+{{/newTestInfrastructure}}
+{{testAnnotations}}class {{applicationName}}Tests {
 
 	@Test
 	fun contextLoads() {
