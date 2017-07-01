@@ -1,0 +1,7 @@
+---
+applications:
+- name: eitan-start
+  path: target/initializr-service.jar
+  memory: 1024M
+  buildpack: java_buildpack
+
