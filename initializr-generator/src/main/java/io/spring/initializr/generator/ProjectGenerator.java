@@ -78,6 +78,10 @@ public class ProjectGenerator {
 
 	private static final Version VERSION_2_0_0_M1 = Version.parse("2.0.0.M1");
 
+	private static final Version VERSION_2_0_0_M3 = Version.parse("2.0.0.M3");
+
+	private static final Version VERSION_2_0_0_M6 = Version.parse("2.0.0.M6");
+
 	@Autowired
 	private ApplicationEventPublisher eventPublisher;
 
@@ -182,7 +186,10 @@ public class ProjectGenerator {
 	 */
 	public File generateProjectStructure(ProjectRequest request) {
 		try {
-			return doGenerateProjectStructure(request);
+			Map<String, Object> model = resolveModel(request);
+			File rootDir = generateProjectStructure(request, model);
+			publishProjectGeneratedEvent(request);
+			return rootDir;
 		}
 		catch (InitializrException ex) {
 			publishProjectFailedEvent(request, ex);
@@ -190,9 +197,12 @@ public class ProjectGenerator {
 		}
 	}
 
-	protected File doGenerateProjectStructure(ProjectRequest request) {
-		Map<String, Object> model = resolveModel(request);
-
+	/**
+	 * Generate a project structure for the specified {@link ProjectRequest} and resolved
+	 * model.
+	 */
+	protected File generateProjectStructure(ProjectRequest request,
+			Map<String, Object> model) {
 		File rootDir;
 		try {
 			rootDir = File.createTempFile("tmp", "", getTemporaryDirectory());
@@ -250,9 +260,7 @@ public class ProjectGenerator {
 			new File(dir, "src/main/resources/templates").mkdirs();
 			new File(dir, "src/main/resources/static").mkdirs();
 		}
-		publishProjectGeneratedEvent(request);
 		return rootDir;
-
 	}
 
 	/**
@@ -332,6 +340,7 @@ public class ProjectGenerator {
 		ProjectRequest request = requestResolver.resolve(originalRequest, metadata);
 
 		// request resolved so we can log what has been requested
+		Version bootVersion = Version.safeParse(request.getBootVersion());
 		List<Dependency> dependencies = request.getResolvedDependencies();
 		List<String> dependencyIds = dependencies.stream().map(Dependency::getId)
 				.collect(Collectors.toList());
@@ -341,6 +350,11 @@ public class ProjectGenerator {
 		if (isWar(request)) {
 			model.put("war", true);
 		}
+
+		// Kotlin supported as of M6
+		final boolean kotlinSupport = VERSION_2_0_0_M6
+				.compareTo(bootVersion) <= 0;
+		model.put("kotlinSupport", kotlinSupport);
 
 		if (isMavenBuild(request)) {
 			model.put("mavenBuild", true);
@@ -402,8 +416,8 @@ public class ProjectGenerator {
 		// Add various versions
 		model.put("dependencyManagementPluginVersion", metadata.getConfiguration()
 				.getEnv().getGradle().getDependencyManagementPluginVersion());
-		model.put("kotlinVersion",
-				metadata.getConfiguration().getEnv().getKotlin().getVersion());
+		model.put("kotlinVersion", metadata.getConfiguration().getEnv().getKotlin()
+				.resolveKotlinVersion(bootVersion));
 		if ("kotlin".equals(request.getLanguage())) {
 			model.put("kotlin", true);
 		}
@@ -412,33 +426,33 @@ public class ProjectGenerator {
 		}
 
 		model.put("isRelease", request.getBootVersion().contains("RELEASE"));
-		// @SpringBootApplication available as from 1.2.0.RC1
-		model.put("useSpringBootApplication", VERSION_1_2_0_RC1
-				.compareTo(Version.safeParse(request.getBootVersion())) <= 0);
+		setupApplicationModel(request, model);
 
 		// Gradle plugin has changed as from 1.3.0
 		model.put("bootOneThreeAvailable", VERSION_1_3_0_M1
-				.compareTo(Version.safeParse(request.getBootVersion())) <= 0);
+				.compareTo(bootVersion) <= 0);
 
 		model.put("bootTwoZeroAvailable", VERSION_2_0_0_M1
-				.compareTo(Version.safeParse(request.getBootVersion())) <= 0);
+				.compareTo(bootVersion) <= 0);
 
 		// Gradle plugin has changed again as from 1.4.2
 		model.put("springBootPluginName",
 				(VERSION_1_4_2_M1
-						.compareTo(Version.safeParse(request.getBootVersion())) <= 0
+						.compareTo(bootVersion) <= 0
 						? "org.springframework.boot" : "spring-boot"));
 
 		// New testing stuff
 		model.put("newTestInfrastructure", isNewTestInfrastructureAvailable(request));
 
-		// New Servlet Initializer location
-		model.put("newServletInitializer", isNewServletInitializerAvailable(request));
+		// Servlet Initializer
+		model.put("servletInitializrImport", new Imports(request.getLanguage()).add(
+				getServletInitializrClass(request)).toString());
+
+		// Kotlin-specific dep
+		model.put("kotlinStdlibArtifactId", getKotlinStdlibArtifactId(request));
 
 		// Java versions
-		model.put("isJava6", isJavaVersion(request, "1.6"));
-		model.put("isJava7", isJavaVersion(request, "1.7"));
-		model.put("isJava8", isJavaVersion(request, "1.8"));
+		model.put("java8OrLater", isJava8OrLater(request));
 
 		// Append the project request to the model
 		BeanWrapperImpl bean = new BeanWrapperImpl(request);
@@ -480,39 +494,77 @@ public class ProjectGenerator {
 		return property.toStandardFormat();
 	}
 
-	protected void setupTestModel(ProjectRequest request, Map<String, Object> model) {
-		String imports = "";
-		String testAnnotations = "";
-		boolean newTestInfrastructure = isNewTestInfrastructureAvailable(request);
-		if (newTestInfrastructure) {
-			imports += String.format(
-					generateImport("org.springframework.boot.test.context.SpringBootTest",
-							request.getLanguage()) + "%n");
-			imports += String.format(
-					generateImport("org.springframework.test.context.junit4.SpringRunner",
-							request.getLanguage()) + "%n");
+	protected void setupApplicationModel(ProjectRequest request,
+			Map<String, Object> model) {
+		Imports imports = new Imports(request.getLanguage());
+		Annotations annotations = new Annotations();
+		boolean useSpringBootApplication = VERSION_1_2_0_RC1
+				.compareTo(Version.safeParse(request.getBootVersion())) <= 0;
+		if (useSpringBootApplication) {
+			imports.add("org.springframework.boot.autoconfigure.SpringBootApplication");
+			annotations.add("@SpringBootApplication");
 		}
 		else {
-			imports += String.format(generateImport(
-					"org.springframework.boot.test.SpringApplicationConfiguration",
-					request.getLanguage()) + "%n");
-			imports += String.format(generateImport(
-					"org.springframework.test.context.junit4.SpringJUnit4ClassRunner",
-					request.getLanguage()) + "%n");
+			imports.add("org.springframework.boot.autoconfigure.EnableAutoConfiguration")
+					.add("org.springframework.context.annotation.ComponentScan")
+					.add("org.springframework.context.annotation.Configuration");
+			annotations.add("@EnableAutoConfiguration")
+					.add("@ComponentScan")
+					.add("@Configuration");
 		}
-		if (request.hasWebFacet() && !newTestInfrastructure) {
-			imports += String.format(generateImport(
-					"org.springframework.test.context.web.WebAppConfiguration",
-					request.getLanguage()) + "%n");
-			testAnnotations = String.format("@WebAppConfiguration%n");
-		}
-		model.put("testImports", imports);
-		model.put("testAnnotations", testAnnotations);
+		model.put("applicationImports", imports.toString());
+		model.put("applicationAnnotations", annotations.toString());
+
+
 	}
 
-	protected String generateImport(String type, String language) {
-		String end = ("groovy".equals(language) || "kotlin".equals(language)) ? "" : ";";
-		return "import " + type + end;
+	protected void setupTestModel(ProjectRequest request, Map<String, Object> model) {
+		Imports imports = new Imports(request.getLanguage());
+		Annotations testAnnotations = new Annotations();
+		boolean newTestInfrastructure = isNewTestInfrastructureAvailable(request);
+		if (newTestInfrastructure) {
+			imports.add("org.springframework.boot.test.context.SpringBootTest")
+					.add("org.springframework.test.context.junit4.SpringRunner");
+		}
+		else {
+			imports.add("org.springframework.boot.test.SpringApplicationConfiguration")
+					.add("org.springframework.test.context.junit4.SpringJUnit4ClassRunner");
+		}
+		if (request.hasWebFacet() && !newTestInfrastructure) {
+			imports.add("org.springframework.test.context.web.WebAppConfiguration");
+			testAnnotations.add("@WebAppConfiguration");
+		}
+		model.put("testImports", imports.withFinalCarriageReturn().toString());
+		model.put("testAnnotations", testAnnotations.withFinalCarriageReturn().toString());
+	}
+
+	protected String getServletInitializrClass(ProjectRequest request) {
+		Version bootVersion = Version.safeParse(request.getBootVersion());
+		if (VERSION_1_4_0_M3.compareTo(bootVersion) > 0) {
+			return "org.springframework.boot.context.web.SpringBootServletInitializer";
+		}
+		else if (VERSION_2_0_0_M1.compareTo(bootVersion) > 0) {
+			return "org.springframework.boot.web.support.SpringBootServletInitializer";
+		}
+		else {
+			return "org.springframework.boot.web.servlet.support.SpringBootServletInitializer";
+		}
+	}
+
+	protected String getKotlinStdlibArtifactId(ProjectRequest request) {
+		String javaVersion = request.getJavaVersion();
+		if ("1.6".equals(javaVersion)) {
+			return "kotlin-stdlib";
+		}
+		else if ("1.7".equals(javaVersion)) {
+			return "kotlin-stdlib-jre7";
+		}
+		return "kotlin-stdlib-jre8";
+	}
+
+	private static boolean isJava8OrLater(ProjectRequest request) {
+		return !request.getJavaVersion().equals("1.6")
+				&& !request.getJavaVersion().equals("1.7");
 	}
 
 	private static boolean isGradleBuild(ProjectRequest request) {
@@ -532,17 +584,12 @@ public class ProjectGenerator {
 				.compareTo(Version.safeParse(request.getBootVersion())) <= 0;
 	}
 
-	private static boolean isNewServletInitializerAvailable(ProjectRequest request) {
-		return VERSION_1_4_0_M3
-				.compareTo(Version.safeParse(request.getBootVersion())) <= 0;
-	}
-
 	private static boolean isGradle3Available(Version bootVersion) {
 		return VERSION_1_5_0_M1.compareTo(bootVersion) <= 0;
 	}
 
-	private static boolean isJavaVersion(ProjectRequest request, String version) {
-		return request.getJavaVersion().equals(version);
+	private static boolean isGradle4Available(Version bootVersion) {
+		return VERSION_2_0_0_M3.compareTo(bootVersion) < 0;
 	}
 
 	private byte[] doGenerateMavenPom(Map<String, Object> model) {
@@ -554,7 +601,8 @@ public class ProjectGenerator {
 	}
 
 	private void writeGradleWrapper(File dir, Version bootVersion) {
-		String gradlePrefix = isGradle3Available(bootVersion) ? "gradle3" : "gradle";
+		String gradlePrefix = isGradle4Available(bootVersion) ? "gradle4" :
+				isGradle3Available(bootVersion) ? "gradle3" : "gradle";
 		writeTextResource(dir, "gradlew.bat", gradlePrefix + "/gradlew.bat");
 		writeTextResource(dir, "gradlew", gradlePrefix + "/gradlew");
 
@@ -643,6 +691,66 @@ public class ProjectGenerator {
 		return dependencies.stream().filter(dep -> scope.equals(dep.getScope()))
 				.sorted(Comparator.comparing(MetadataElement::getId))
 				.collect(Collectors.toList());
+	}
+
+	private static class Imports {
+
+		private final List<String> statements = new ArrayList<>();
+		private final String language;
+		private boolean finalCarriageReturn;
+
+		public Imports(String language) {
+			this.language = language;
+		}
+
+		public Imports add(String type) {
+			this.statements.add(generateImport(type, language));
+			return this;
+		}
+
+		public Imports withFinalCarriageReturn() {
+			this.finalCarriageReturn = true;
+			return this;
+		}
+
+		private String generateImport(String type, String language) {
+			String end = ("groovy".equals(language) || "kotlin".equals(language)) ? "" : ";";
+			return "import " + type + end;
+		}
+
+		public String toString() {
+			if (this.statements.isEmpty()) {
+				return "";
+			}
+			String content = String.join(String.format("%n"), this.statements);
+			return (finalCarriageReturn ? String.format("%s%n", content) : content);
+		}
+
+	}
+
+	private static class Annotations {
+
+		private final List<String> statements = new ArrayList<>();
+		private boolean finalCarriageReturn;
+
+		public Annotations add(String type) {
+			this.statements.add(type);
+			return this;
+		}
+
+		public Annotations withFinalCarriageReturn() {
+			this.finalCarriageReturn = true;
+			return this;
+		}
+
+		public String toString() {
+			if (this.statements.isEmpty()) {
+				return "";
+			}
+			String content = String.join(String.format("%n"), this.statements);
+			return (finalCarriageReturn ? String.format("%s%n", content) : content);
+		}
+
 	}
 
 }

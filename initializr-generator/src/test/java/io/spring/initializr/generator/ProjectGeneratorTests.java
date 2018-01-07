@@ -207,6 +207,31 @@ public class ProjectGeneratorTests extends AbstractProjectGeneratorTests {
 	}
 
 	@Test
+	public void cleanPackageNameWithGroupIdAndArtifactIdWithVersion() {
+		ProjectRequest request = createProjectRequest("web");
+		request.setGroupId("org.acme");
+		request.setArtifactId("foo-1.4.5");
+		assertProjectWithPackageNameWithVersion(request);
+	}
+
+	@Test
+	public void cleanPackageNameWithInvalidPackageName() {
+		ProjectRequest request = createProjectRequest("web");
+		request.setGroupId("org.acme");
+		request.setArtifactId("foo");
+		request.setPackageName("org.acme.foo-1.4.5");
+		assertProjectWithPackageNameWithVersion(request);
+	}
+
+	private void assertProjectWithPackageNameWithVersion(ProjectRequest request) {
+		generateProject(request)
+				.isJavaProject("org/acme/foo145", "DemoApplication")
+				.sourceCodeAssert(
+						"src/main/java/org/acme/foo145/DemoApplication.java")
+				.contains("package org.acme.foo145;");
+	}
+
+	@Test
 	public void springBoot11UseEnableAutoConfigurationJava() {
 		ProjectRequest request = createProjectRequest("web");
 		request.setBootVersion("1.1.9.RELEASE");
@@ -313,6 +338,30 @@ public class ProjectGeneratorTests extends AbstractProjectGeneratorTests {
 		request.setType("gradle-project");
 		request.setBootVersion("1.5.0.RELEASE");
 		generateProject(request).isGradleProject("3.5.1");
+	}
+
+	@Test
+	public void springBoot20M3UseGradle3() {
+		ProjectRequest request = createProjectRequest("web");
+		request.setType("gradle-project");
+		request.setBootVersion("2.0.0.M3");
+		generateProject(request).isGradleProject("3.5.1");
+	}
+
+	@Test
+	public void springBoot20M4UsesGradle4() {
+		ProjectRequest request = createProjectRequest("web");
+		request.setType("gradle-project");
+		request.setBootVersion("2.0.0.M4");
+		generateProject(request).isGradleProject("4.2");
+	}
+
+	@Test
+	public void springBoot20SnapshotsUseGradle4() {
+		ProjectRequest request = createProjectRequest("web");
+		request.setType("gradle-project");
+		request.setBootVersion("2.0.0.BUILD-SNAPSHOT");
+		generateProject(request).isGradleProject("4.2");
 	}
 
 	@Test
@@ -739,7 +788,7 @@ public class ProjectGeneratorTests extends AbstractProjectGeneratorTests {
 
 		// First after processor that flips Spring Boot version
 		projectGenerator.setRequestResolver(new ProjectRequestResolver(
-				Collections.singletonList(new ProjectRequestPostProcessorAdapter() {
+				Collections.singletonList(new ProjectRequestPostProcessor() {
 					@Override
 					public void postProcessBeforeResolution(ProjectRequest r,
 							InitializrMetadata m) {

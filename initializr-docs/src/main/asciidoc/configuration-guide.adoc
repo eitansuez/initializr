@@ -115,9 +115,15 @@ reason for that is that Spring Initializr calls an API on spring.io to retrieve 
 latest versions automatically. This makes sure that you always get the latest available
 versions.
 
-If that's not what you want, you need to override the `InitializrMetadataProvider` bean to
-provide your own metadata for the service. For instance, you could swap to an
-implementation that always returns the contents of static `application.yml`:
+If you are behind a proxy, or need to customize the `RestTemplate` that is used behind the
+scenes, you can define a `RestTemplateCustomizer` bean in your configuration. For more
+details, {spring-boot-reference}/#boot-features-restclient-customization[check the
+documentation].
+
+If you don't want the version to be upgraded automatically, you need to override the
+`InitializrMetadataProvider` bean to provide your own metadata for the service. For
+instance, you could swap to an implementation that always returns the contents of static
+`application.yml`:
 
 [source,java,indent=0]
 ----
@@ -287,6 +293,22 @@ can add a `versionRange` attribute to its definition. A version range is a range
 versions of Spring Boot which are valid in combination with it. The versions are *not*
 applied to the dependency itself, but rather used to filter out the dependency, or modify
 it, when different versions of Spring Boot are selected for the generated project.
+
+A typical version is composed of four parts: a major revision, a minor revision, a patch
+revision and a qualifier. Qualifiers are ordered as follows:
+
+* `M` for milestones (e.g. `2.0.0.M1` is the first milestone of the upcoming 2.0.0
+release): can be seen as "beta" release
+* `RC` for release candidates (e.g. `2.0.0.RC2` is the second release candidate of
+upcoming 2.0.0 release)
+* `RELEASE` for general availability (e.g. `2.0.0.RELEASE` is 2.0.0 proper)
+* `BUILD-SNAPSHOT` for development build (`2.1.0.BUILD-SNAPSHOT` represents the latest
+available development build of the upcoming 2.1.0 release).
+
+TIP: snapshots are in a bit special in that scheme as they always represents the "latest
+state" of a release. `M1` represents the most oldest version for a given major, minor and
+patch revisions.
+
 
 A version range has a lower and an upper bound, and if the bound is inclusive it is
 denoted as a square bracket (`[` or `]`), otherwise it is exclusive and denoted by a
@@ -767,14 +789,15 @@ one will require some configuration to get it working):
 |===
 | cache name | Description
 
-|`initializr`
+|`initializr.metadata`
 |Cache the full metadata of the service. When the metadata expires, it is fully resolved
 again (including a check on spring.io for the latest Spring Boot versions). Adapt the
 expiration settings accordingly.
 
-|`project-resources`
+|`initializr.dependency-metadata`
+|Cache dependency-specific metadata.
+
+|`initializr.project-resources`
 |Cache resources that are used to generate projects.
 
-|`dependency-metadata`
-|Cache dependency-specific metadata.
 |===

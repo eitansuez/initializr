@@ -16,11 +16,16 @@
 
 package io.spring.initializr.metadata;
 
+import io.spring.initializr.metadata.InitializrConfiguration.Env.Kotlin;
+import io.spring.initializr.util.Version;
 import org.junit.Test;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 
 /**
+ * Tests for {@link InitializrConfiguration}.
+ *
  * @author Stephane Nicoll
  */
 public class InitializrConfigurationTests {
@@ -139,7 +144,13 @@ public class InitializrConfigurationTests {
 
 	@Test
 	public void generatePackageNameInvalidStartCharacter() {
-		assertEquals("com.example", this.properties.cleanPackageName("0om.foo", "com.example"));
+		assertEquals("com.foo", this.properties.cleanPackageName("0com.foo", "com.example"));
+	}
+
+	@Test
+	public void generatePackageNameVersion() {
+		assertEquals("com.foo.test145", this.properties.cleanPackageName(
+				"com.foo.test-1.4.5", "com.example"));
 	}
 
 	@Test
@@ -151,6 +162,37 @@ public class InitializrConfigurationTests {
 	public void validateArtifactRepository() {
 		this.properties.getEnv().setArtifactRepository("http://foo/bar");
 		assertEquals("http://foo/bar/", this.properties.getEnv().getArtifactRepository());
+	}
+
+	@Test
+	public void resolveKotlinVersionMatchingMapping() {
+		Kotlin kotlin = this.properties.getEnv().getKotlin();
+		kotlin.setDefaultVersion("1.2.3");
+		kotlin.getMappings().add(createKotlinVersionMapping(
+				"[1.4.0.RELEASE,1.5.0.RELEASE)", "1.5"));
+		kotlin.getMappings().add(createKotlinVersionMapping("1.5.0.RELEASE", "1.6"));
+		kotlin.validate();
+		assertThat(kotlin.resolveKotlinVersion(Version.parse("1.5.3.RELEASE")))
+				.isEqualTo("1.6");
+	}
+
+	@Test
+	public void resolveKotlinVersionUsingDefault() {
+		Kotlin kotlin = this.properties.getEnv().getKotlin();
+		kotlin.setDefaultVersion("1.2.3");
+		kotlin.getMappings().add(createKotlinVersionMapping(
+				"[1.4.0.RELEASE,1.5.0.RELEASE)", "1.5"));
+		kotlin.validate();
+		assertThat(kotlin.resolveKotlinVersion(Version.parse("1.3.2.RELEASE")))
+				.isEqualTo("1.2.3");
+	}
+
+	private Kotlin.Mapping createKotlinVersionMapping(String versionRange,
+			String kotlinVersion){
+		Kotlin.Mapping mapping = new Kotlin.Mapping();
+		mapping.setVersionRange(versionRange);
+		mapping.setVersion(kotlinVersion);
+		return mapping;
 	}
 
 }

@@ -83,7 +83,7 @@ public class ProjectGeneratorBuildTests extends AbstractProjectGeneratorTests {
 
 	@Test
 	public void standardWarGroovy() {
-		testStandardWar("java");
+		testStandardWar("groovy");
 	}
 
 	@Test
@@ -189,6 +189,41 @@ public class ProjectGeneratorBuildTests extends AbstractProjectGeneratorTests {
 		ProjectAssert project = generateProject(request);
 		project.sourceCodeAssert(fileName).equalsTo(new ClassPathResource(
 				"project/" + build + "/kotlin-java7-" + assertFileName));
+	}
+
+	@Test
+	public void kotlinSpringBoot2Legacy() {
+		ProjectRequest request = createProjectRequest();
+		request.setLanguage("kotlin");
+		request.setBootVersion("2.0.0.M5");
+		ProjectAssert project = generateProject(request);
+		project.sourceCodeAssert("src/main/kotlin/com/example/demo/DemoApplication.kt")
+				.equalsTo(new ClassPathResource("project/kotlin/spring-boot-2.0/DemoApplicationLegacy.kt.gen"));
+		project.sourceCodeAssert(fileName).equalsTo(new ClassPathResource(
+				"project/" + build + "/kotlin-springboot2-legacy-" + assertFileName));
+	}
+
+	@Test
+	public void kotlinSpringBoot2() {
+		ProjectRequest request = createProjectRequest();
+		request.setLanguage("kotlin");
+		request.setBootVersion("2.0.0.M6");
+		ProjectAssert project = generateProject(request);
+		project.sourceCodeAssert("src/main/kotlin/com/example/demo/DemoApplication.kt")
+				.equalsTo(new ClassPathResource("project/kotlin/spring-boot-2.0/DemoApplication.kt.gen"));
+		project.sourceCodeAssert(fileName).equalsTo(new ClassPathResource(
+				"project/" + build + "/kotlin-springboot2-" + assertFileName));
+	}
+
+	@Test
+	public void kotlinJava9() {
+		ProjectRequest request = createProjectRequest();
+		request.setLanguage("kotlin");
+		request.setBootVersion("2.0.0.M6");
+		request.setJavaVersion("9");
+		ProjectAssert project = generateProject(request);
+		project.sourceCodeAssert(fileName).equalsTo(new ClassPathResource(
+				"project/" + build + "/kotlin-java9-" + assertFileName));
 	}
 
 	@Override

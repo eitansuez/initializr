@@ -16,34 +16,16 @@
 
 package io.spring.initializr.service.extension;
 
-import java.util.Arrays;
-
-import io.spring.initializr.generator.ProjectGenerator;
 import io.spring.initializr.generator.ProjectRequest;
-import io.spring.initializr.metadata.InitializrMetadataProvider;
-import io.spring.initializr.test.generator.GradleBuildAssert;
-import io.spring.initializr.test.generator.PomAssert;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 /**
  * Tests for {@link SpringBoot2RequestPostProcessor}.
  *
  * @author Stephane Nicoll
  */
-@RunWith(SpringJUnit4ClassRunner.class)
-@SpringBootTest
-public class SpringBoot2RequestPostProcessorTests {
-
-	@Autowired
-	private ProjectGenerator projectGenerator;
-
-	@Autowired
-	private InitializrMetadataProvider metadataProvider;
+public class SpringBoot2RequestPostProcessorTests
+		extends AbstractRequestPostProcessorTests {
 
 	@Test
 	public void java8IsMandatoryMaven() {
@@ -61,23 +43,20 @@ public class SpringBoot2RequestPostProcessorTests {
 		generateGradleBuild(request).hasJavaVersion("1.8");
 	}
 
-	private PomAssert generateMavenPom(ProjectRequest request) {
-		request.setType("maven-build");
-		String content = new String(projectGenerator.generateMavenPom(request));
-		return new PomAssert(content);
+	@Test
+	public void java9CanBeUsedMaven() {
+		ProjectRequest request = createProjectRequest("web");
+		request.setBootVersion("2.0.0.BUILD-SNAPSHOT");
+		request.setJavaVersion("9");
+		generateMavenPom(request).hasJavaVersion("9");
 	}
 
-	private GradleBuildAssert generateGradleBuild(ProjectRequest request) {
-		request.setType("gradle-build");
-		String content = new String(projectGenerator.generateGradleBuild(request));
-		return new GradleBuildAssert(content);
-	}
-
-	private ProjectRequest createProjectRequest(String... styles) {
-		ProjectRequest request = new ProjectRequest();
-		request.initialize(metadataProvider.get());
-		request.getStyle().addAll(Arrays.asList(styles));
-		return request;
+	@Test
+	public void java9CanBeUsedGradle() {
+		ProjectRequest request = createProjectRequest("data-jpa");
+		request.setBootVersion("2.0.0.M3");
+		request.setJavaVersion("9");
+		generateGradleBuild(request).hasJavaVersion("9");
 	}
 
 }

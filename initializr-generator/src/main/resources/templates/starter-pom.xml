@@ -46,24 +46,20 @@
 			<artifactId>groovy</artifactId>
 		</dependency>
 		{{/groovy}}
-		{{#kotlin}}
+		{{#kotlin}}                                                     
 		<dependency>
 			<groupId>org.jetbrains.kotlin</groupId>
-			{{#isJava6}}
-			<artifactId>kotlin-stdlib</artifactId>
-			{{/isJava6}}
-			{{#isJava7}}
-			<artifactId>kotlin-stdlib-jre7</artifactId>
-			{{/isJava7}}
-			{{#isJava8}}
-			<artifactId>kotlin-stdlib-jre8</artifactId>
-			{{/isJava8}}
+			<artifactId>{{kotlinStdlibArtifactId}}</artifactId>
+			{{^kotlinSupport}}
 			<version>${kotlin.version}</version>
+			{{/kotlinSupport}}
 		</dependency>
 		<dependency>
 			<groupId>org.jetbrains.kotlin</groupId>
 			<artifactId>kotlin-reflect</artifactId>
+			{{^kotlinSupport}}
 			<version>${kotlin.version}</version>
+			{{/kotlinSupport}}
 		</dependency>
 		{{/kotlin}}
 
@@ -177,15 +173,20 @@
 			<plugin>
 				<artifactId>kotlin-maven-plugin</artifactId>
 				<groupId>org.jetbrains.kotlin</groupId>
+				{{^kotlinSupport}}
 				<version>${kotlin.version}</version>
+				{{/kotlinSupport}}
 				<configuration>
 					<compilerPlugins>
 						<plugin>spring</plugin>
 					</compilerPlugins>
-					{{#isJava8}}
+					{{^kotlinSupport}}
+					{{#java8OrLater}}
 					<jvmTarget>1.8</jvmTarget>
-					{{/isJava8}}
+					{{/java8OrLater}}
+					{{/kotlinSupport}}
 				</configuration>
+				{{^kotlinSupport}}
 				<executions>
 					<execution>
 						<id>compile</id>
@@ -202,6 +203,7 @@
 						</goals>
 					</execution>
 				</executions>
+				{{/kotlinSupport}}
 				<dependencies>
 					<dependency>
 						<groupId>org.jetbrains.kotlin</groupId>

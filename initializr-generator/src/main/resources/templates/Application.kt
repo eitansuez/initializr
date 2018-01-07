@@ -1,25 +1,21 @@
 package {{packageName}}
 
+{{^kotlinSupport}}
 import org.springframework.boot.SpringApplication
-{{#useSpringBootApplication}}
-import org.springframework.boot.autoconfigure.SpringBootApplication
-{{/useSpringBootApplication}}
-{{^useSpringBootApplication}}
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration
-import org.springframework.context.annotation.ComponentScan
-import org.springframework.context.annotation.Configuration
-{{/useSpringBootApplication}}
+{{/kotlinSupport}}
+{{applicationImports}}
+{{#kotlinSupport}}
+import org.springframework.boot.runApplication
+{{/kotlinSupport}}
 
-{{#useSpringBootApplication}}
-@SpringBootApplication
-{{/useSpringBootApplication}}
-{{^useSpringBootApplication}}
-@Configuration
-@ComponentScan
-@EnableAutoConfiguration
-{{/useSpringBootApplication}}
+{{applicationAnnotations}}
 class {{applicationName}}
 
 fun main(args: Array<String>) {
+{{^kotlinSupport}}
     SpringApplication.run({{applicationName}}::class.java, *args)
+{{/kotlinSupport}}
+{{#kotlinSupport}}
+    runApplication<{{applicationName}}>(*args)
+{{/kotlinSupport}}
 }

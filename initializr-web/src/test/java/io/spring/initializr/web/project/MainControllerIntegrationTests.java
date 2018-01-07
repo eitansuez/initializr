@@ -22,6 +22,7 @@ import java.net.URISyntaxException;
 import io.spring.initializr.metadata.Dependency;
 import io.spring.initializr.web.AbstractInitializrControllerIntegrationTests;
 import io.spring.initializr.web.mapper.InitializrMetadataVersion;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -118,6 +119,14 @@ public class MainControllerIntegrationTests
 	}
 
 	@Test
+	public void kotlinRange() {
+		downloadZip("/starter.zip?style=web&language=kotlin&bootVersion=1.2.1.RELEASE")
+				.isKotlinProject().isMavenProject()
+				.pomAssert().hasDependenciesCount(4)
+				.hasProperty("kotlin.version", "1.1");
+	}
+
+	@Test
 	public void gradleWarProject() {
 		downloadZip("/starter.zip?style=web&style=security&packaging=war&type=gradle.zip")
 				.isJavaWarProject().isGradleProject();
@@ -187,7 +196,7 @@ public class MainControllerIntegrationTests
 		assertThat(response.getHeaders().getFirst(HttpHeaders.ETAG), not(nullValue()));
 		validateContentType(response,
 				AbstractInitializrControllerIntegrationTests.CURRENT_METADATA_MEDIA_TYPE);
-		validateCurrentMetadata(new JSONObject(response.getBody()));
+		validateCurrentMetadata(response.getBody());
 	}
 
 	@Test
@@ -197,7 +206,7 @@ public class MainControllerIntegrationTests
 				"application/vnd.initializr.v2+json");
 		validateContentType(response,
 				AbstractInitializrControllerIntegrationTests.CURRENT_METADATA_MEDIA_TYPE);
-		validateCurrentMetadata(new JSONObject(response.getBody()));
+		validateCurrentMetadata(response.getBody());
 	}
 
 	@Test
@@ -205,7 +214,7 @@ public class MainControllerIntegrationTests
 		ResponseEntity<String> response = invokeHome(null, "application/hal+json");
 		assertThat(response.getHeaders().getFirst(HttpHeaders.ETAG), not(nullValue()));
 		validateContentType(response, MainController.HAL_JSON_CONTENT_TYPE);
-		validateCurrentMetadata(new JSONObject(response.getBody()));
+		validateCurrentMetadata(response.getBody());
 	}
 
 	@Test
@@ -244,7 +253,7 @@ public class MainControllerIntegrationTests
 		ResponseEntity<String> response = invokeHome("curl/1.2.4", "application/json");
 		validateContentType(response,
 				AbstractInitializrControllerIntegrationTests.CURRENT_METADATA_MEDIA_TYPE);
-		validateCurrentMetadata(new JSONObject(response.getBody()));
+		validateCurrentMetadata(response.getBody());
 	}
 
 	@Test
@@ -271,7 +280,7 @@ public class MainControllerIntegrationTests
 		ResponseEntity<String> response = invokeHome("HTTPie/0.8.0", "application/json");
 		validateContentType(response,
 				AbstractInitializrControllerIntegrationTests.CURRENT_METADATA_MEDIA_TYPE);
-		validateCurrentMetadata(new JSONObject(response.getBody()));
+		validateCurrentMetadata(response.getBody());
 	}
 
 	@Test
@@ -291,7 +300,7 @@ public class MainControllerIntegrationTests
 		ResponseEntity<String> response = invokeHome("SpringBootCli/1.2.0", "*/*");
 		validateContentType(response,
 				AbstractInitializrControllerIntegrationTests.CURRENT_METADATA_MEDIA_TYPE);
-		validateCurrentMetadata(new JSONObject(response.getBody()));
+		validateCurrentMetadata(response.getBody());
 	}
 
 	@Test
@@ -303,8 +312,7 @@ public class MainControllerIntegrationTests
 	@Test
 	// Test that the current output is exactly what we expect
 	public void validateCurrentProjectMetadata() {
-		JSONObject json = getMetadataJson();
-		validateCurrentMetadata(json);
+		validateCurrentMetadata(getMetadataJson());
 	}
 
 	private void validateCurlHelpContent(ResponseEntity<String> response) {
@@ -435,19 +443,23 @@ public class MainControllerIntegrationTests
 		assertFalse("google analytics should be disabled", body.contains("GoogleAnalyticsObject"));
 	}
 
-	private JSONObject getMetadataJson() {
+	private String getMetadataJson() {
 		return getMetadataJson(null);
 	}
 
-	private JSONObject getMetadataJson(String userAgentHeader, String... acceptHeaders) {
-		String json = invokeHome(userAgentHeader, acceptHeaders).getBody();
-		return new JSONObject(json);
+	private String getMetadataJson(String userAgentHeader, String... acceptHeaders) {
+		return invokeHome(userAgentHeader, acceptHeaders).getBody();
 	}
 
 	private static void assertStandardErrorBody(String body, String message) {
 		assertNotNull("error body must be available", body);
-		JSONObject model = new JSONObject(body);
-		assertEquals(message, model.get("message"));
+		try {
+			JSONObject model = new JSONObject(body);
+			assertEquals(message, model.get("message"));
+		}
+		catch (JSONException ex) {
+			throw new IllegalArgumentException(ex);
+		}
 	}
 
 }

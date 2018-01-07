@@ -16,8 +16,11 @@
 
 package io.spring.initializr.service.extension;
 
+import java.util.Arrays;
+import java.util.List;
+
 import io.spring.initializr.generator.ProjectRequest;
-import io.spring.initializr.generator.ProjectRequestPostProcessorAdapter;
+import io.spring.initializr.generator.ProjectRequestPostProcessor;
 import io.spring.initializr.metadata.InitializrMetadata;
 import io.spring.initializr.util.Version;
 
@@ -30,15 +33,19 @@ import org.springframework.stereotype.Component;
  * @author Stephane Nicoll
  */
 @Component
-class SpringBoot2RequestPostProcessor extends ProjectRequestPostProcessorAdapter {
+class SpringBoot2RequestPostProcessor implements ProjectRequestPostProcessor {
 
 	private static final Version VERSION_2_0_0_M1 = Version.parse("2.0.0.M1");
 
+	private static final List<String> VALID_VERSIONS = Arrays.asList("1.8", "9");
+
 	@Override
 	public void postProcessAfterResolution(ProjectRequest request, InitializrMetadata metadata) {
-		Version requestVersion = Version.safeParse(request.getBootVersion());
-		if (VERSION_2_0_0_M1.compareTo(requestVersion) <= 0) {
-			request.setJavaVersion("1.8");
+		if (!VALID_VERSIONS.contains(request.getJavaVersion())) {
+			Version requestVersion = Version.safeParse(request.getBootVersion());
+			if (VERSION_2_0_0_M1.compareTo(requestVersion) <= 0) {
+				request.setJavaVersion("1.8");
+			}
 		}
 	}
 
