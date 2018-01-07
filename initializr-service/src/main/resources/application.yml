@@ -1260,7 +1260,7 @@ initializr:
       tags:
         build: maven
         format: project
-      default: true
+      default: false
       action: /starter.zip
     - name: Maven POM
       id: maven-build
@@ -1278,7 +1278,7 @@ initializr:
       tags:
         build: gradle
         format: project
-      default: false
+      default: true
       action: /starter.zip
     - name: Gradle Config
       id: gradle-build
@@ -1325,3 +1325,5 @@ initializr:
     - name: 1.1.12
       id: 1.1.12.RELEASE
       default: false
+  group-id:
+    value: io.pivotal.education
