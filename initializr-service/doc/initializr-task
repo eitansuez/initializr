@@ -3,7 +3,6 @@
 initializr:
 
 TODO:
-1. sync with parent project (one i forked from)
 
 -----phase 2:
 write your own separate pure spa javascript implementation of the gui
